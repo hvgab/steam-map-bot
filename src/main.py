@@ -57,36 +57,42 @@ class MyClient(discord.Client):
         # Get workshop-map channel in all guild
         self.WORKSHOP_CHANNEL_NAME = "workshop-maps"
         description = ""
-        description += "This channel is just for workshop links. The bot will clean up the channel for all other messages. \n"
-        description += "Each map has it's own thread for discussions. \n"
-        description += "Use the thumbs up to vote for maps. Use the family emojis to say if the map is best for less than or more than 5 players. \n"
-        description += "Workshop Link https://steamcommunity.com/app/730/workshop/ \n"
+        description += "This channel is just for workshop links. The bot will clean up the channel for all other messages. "
+        description += "Each map has it's own thread for discussions. "
+        description += "Use the thumbs up to vote for maps. Use the family emojis to say if the map is best for less than or more than 5 players. "
+        description += "Workshop Link https://steamcommunity.com/app/730/workshop/ "
+        description = description.strip()
 
         for guild in self.guilds:
-            print(f"Checking {guild.name} for channel topic")
+            print(f"Checking '{guild.name}' for channel topic")
             workshop_channel = discord.utils.get(
                 guild.channels, name=self.WORKSHOP_CHANNEL_NAME
             )
             if workshop_channel.topic != description:
                 # Add/Edit description of channel
-                print(f"Editing {guild.name}#{workshop_channel.name} topic")
+                print(f"Editing '{guild.name}' '#{workshop_channel.name}' topic")
+                print()
+                print(workshop_channel.topic)
+                print()
+                print(description)
                 await workshop_channel.edit(topic=description)
 
     async def on_ready(self):
         print(f"Logged on as {self.user}!")
 
-        print("Guilds")
+        print(f"Guilds for {self.user}:")
         for guild in self.guilds:
-            print(f"{guild}")
+            print(f"- {guild}")
+        print()
 
         # Set channel topic for WORKSHOP_CHANNEL_NAME in all guilds.
-        print(f"Setting {CHANNEL_NAME} topic...")
+        print(f"Setting #{CHANNEL_NAME} topic...")
         await self.init_channel_topic()
 
         # Loop all messages in #workshop-maps and do work on all those.
         # https://docs.pycord.dev/en/stable/api/models.html#discord.TextChannel.history
 
-        print("Fixing missed messages...")
+        print("\n # Fixing missed messages... \n")
         for guild in self.guilds:
             print(guild)
             workshop_map_channel = discord.utils.get(guild.channels, name=CHANNEL_NAME)
@@ -94,7 +100,7 @@ class MyClient(discord.Client):
 
             async for message in workshop_map_channel.history(oldest_first=True):
                 print(
-                    "{message.guild.name}#{message.channel.name}: {message.author.name}: {message.content}"
+                    f"{message.guild.name}#{message.channel.name}: {message.author.name}: {message.content}"
                 )
 
                 if message.author == self.user:
@@ -107,7 +113,7 @@ class MyClient(discord.Client):
                     await self.handle_workshop_url(message)
 
         # Delete all threads without first message.
-        print("Delete threads without original message")
+        print("\n # Delete threads without original message \n")
         for guild in self.guilds:
             print(f"Guild '{guild.name}'")
             channel = discord.utils.get(guild.channels, name=CHANNEL_NAME)
@@ -124,7 +130,7 @@ class MyClient(discord.Client):
                     await thread.delete()
 
         # Add missing threads for BotMessages that are embeds.
-        print("Adding missing threads")
+        print("\n # Adding missing threads \n")
         for guild in self.guilds:
             print(f"Guild '{guild}'")
             workshop_channel = discord.utils.get(guild.channels, name=CHANNEL_NAME)
