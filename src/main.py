@@ -7,6 +7,10 @@ WORKSHOP_URLS = [
     "https://steamcommunity.com/workshop/filedetails/?id=",
 ]
 
+CHANNEL_NAME = "workshop-maps"
+
+WORKSHOP_CONTRIBUTER_ROLE = "🪖 Workshop Contributer!"
+
 
 # make a workshop embed from workshopid
 def create_workshop_embed(workshopid):
@@ -17,9 +21,7 @@ def create_workshop_embed(workshopid):
     description = workshop_data["description"]
     description += "\n"
 
-    embed = discord.Embed(
-        color=None, title=title, url=url, description=description, timestamp=None
-    )
+    embed = discord.Embed(title=title, url=url, description=description, timestamp=None)
     embed.set_image(url=preview_url)
     embed.add_field(name="Link", value=url, inline=False)
     embed.add_field(name="Workshop Id", value=workshopid, inline=False)
@@ -42,6 +44,15 @@ def get_workshop_id_from_url(url):
 
 # Make a client
 class MyClient(discord.Client):
+    def is_workshop_url(self, message):
+        print(message.content)
+
+        for workshop_url in WORKSHOP_URLS:
+            print(workshop_url)
+            if message.content.strip().lower().startswith(workshop_url):
+                return True
+        return False
+
     async def init_channel_topic(self):
         # Get workshop-map channel in all guild
         self.WORKSHOP_CHANNEL_NAME = "workshop-maps"
@@ -64,14 +75,80 @@ class MyClient(discord.Client):
     async def on_ready(self):
         print(f"Logged on as {self.user}!")
 
+        print("Guilds")
+        for guild in self.guilds:
+            print(f"{guild}")
+
         # Set channel topic for WORKSHOP_CHANNEL_NAME in all guilds.
+        print(f"Setting {CHANNEL_NAME} topic...")
         await self.init_channel_topic()
 
+        # Loop all messages in #workshop-maps and do work on all those.
+        # https://docs.pycord.dev/en/stable/api/models.html#discord.TextChannel.history
+
+        print("Fixing missed messages...")
         for guild in self.guilds:
-            print(f"--- {guild} ---")
-            for member in guild.members:
-                print(member)
-            print("\n\n")
+            print(guild)
+            workshop_map_channel = discord.utils.get(guild.channels, name=CHANNEL_NAME)
+            print(workshop_map_channel)
+
+            async for message in workshop_map_channel.history(oldest_first=True):
+                print(
+                    "{message.guild.name}#{message.channel.name}: {message.author.name}: {message.content}"
+                )
+
+                if message.author == self.user:
+                    continue
+
+                if not self.is_workshop_url(message):
+                    await self.remove_workshop_channel_message(message)
+
+                if self.is_workshop_url(message):
+                    await self.handle_workshop_url(message)
+
+        # Delete all threads without first message.
+        print("Delete threads without original message")
+        for guild in self.guilds:
+            print(f"Guild '{guild.name}'")
+            channel = discord.utils.get(guild.channels, name=CHANNEL_NAME)
+            print(f"Channel '{channel.name}'")
+            for thread in channel.threads:
+                print(f"Thread '{thread.name}'")
+
+                try:
+                    original_message = await channel.fetch_message(thread.id)
+                    print(f"Original message : {original_message.content}")
+                except discord.NotFound:
+                    print("❗Original message not found!")
+                    print("Deleting thread...")
+                    await thread.delete()
+
+        # Add missing threads for BotMessages that are embeds.
+        print("Adding missing threads")
+        for guild in self.guilds:
+            print(f"Guild '{guild}'")
+            workshop_channel = discord.utils.get(guild.channels, name=CHANNEL_NAME)
+            print(f"Channel '{channel}'")
+            async for message in workshop_channel.history(oldest_first=True):
+                print(f"Message '{message.content}'")
+                if message.author != self.user:
+                    continue
+
+                if not message.embeds:
+                    continue
+
+                embed = message.embeds[0]
+                print(embed)
+                print(embed.title)
+
+                # Try to get thread with embed name
+                thread = channel.get_thread(message.id)
+                if thread:
+                    print(f"Message has thread: {thread}")
+                else:
+                    print("❗Message does not have a thread!")
+                    print("Adding thread...")
+                    thread = await message.create_thread(name=embed.title)
 
     async def on_message(self, message):
         print(f"#{message.channel} - {message.author}: {message.content}")
@@ -80,14 +157,11 @@ class MyClient(discord.Client):
         if message.author == self.user:
             return
 
-        def is_workshop_url(message):
-            print(message.content)
-
-            for workshop_url in WORKSHOP_URLS:
-                print(workshop_url)
-                if message.content.strip().lower().startswith(workshop_url):
-                    return True
-            return False
+        # if message is in a thread...?
+        # check if there is a thread and embed in workshop-maps channels.
+        # Add embed to channel
+        # Add links to than embed and thread, but do not delete, just reply to the comment with the info. And tag the user in that thread.
+        # Remove embed from link, message.edit(embed=None, embeds=[])
 
         if type(message.channel) == discord.DMChannel:
             workshopid = get_workshop_id_from_url(message.content)
@@ -96,11 +170,13 @@ class MyClient(discord.Client):
             return
 
         # If message is in bot's channel delete if not workshop link.
-        if message.channel.name == "workshop-maps" and not is_workshop_url(message):
+        if message.channel.name == "workshop-maps" and not self.is_workshop_url(
+            message
+        ):
             await self.remove_workshop_channel_message(message)
 
         # If message is workshop url
-        if is_workshop_url(message):
+        if self.is_workshop_url(message):
             print(f"Message from {message.author}: {message.content} is a workshop url")
             await self.handle_workshop_url(message)
 
@@ -137,24 +213,40 @@ class MyClient(discord.Client):
             reply_text += f'Workshop map "{thread_name}" ({workshopid}) has already been posted. \n'
             reply_text += f"Original message: {original_message.jump_url}. \n"
             reply_text += f"Thread: {existing_thread.mention}. \n"
-            try:
-                author = await existing_thread.fetch_member(message.author.id)
-                author_is_in_thread = True
-                # replies.append(
-                #     await message.reply(
-                #         f"{message.author.mention} you are already in the {existing_thread.jump_url} thread..."
-                #     )
-                # )
-                # reply_text += f"{message.author.mention} you are already in the {existing_thread.jump_url} thread..."
-            except discord.NotFound:
-                # replies.append(await message.reply("Tagging you in thread..."))
+            author_is_in_thread = False
+
+            print("members in thread:")
+            print(existing_thread.members)
+
+            print("fetching members")
+            await existing_thread.fetch_members()
+            print("members in thread:")
+            print(existing_thread.members)
+
+            print("author_in_thread FIND")
+            author_in_thread = discord.utils.find(
+                lambda m: m.id == message.author.id, existing_thread.members
+            )
+            print("author_in_thread")
+            print(author_in_thread)
+
+            # print("author_in_thread GET")
+            # author_in_thread = discord.utils.get(
+            #     existing_thread.members, id=message.author.id
+            # )
+            # print("author_in_thread")
+            # print(author_in_thread)
+
+            if not author_in_thread:
                 reply_text += (
                     f"{message.author.mention} I'm tagging you in the thread. \n"
                 )
                 await existing_thread.send(f"{message.author.mention}")
+            else:
+                reply_text += f"{message.author.mention} You are already in the existing thread. \n"
 
             # suppress embeds to avoid discord link embed.
-            replies.append(await message.reply(reply_text, suppress_embeds=True))
+            replies.append(await message.reply(reply_text, suppress=True))
 
             # Delete conversation
             await message.delete(delay=15)
@@ -192,6 +284,7 @@ class MyClient(discord.Client):
 # Start the client
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 
 client = MyClient(intents=intents)
 client.run(os.getenv("discord_token"))
