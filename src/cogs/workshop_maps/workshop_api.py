@@ -14,13 +14,8 @@ def get_published_file_details(id):
 
     r = requests.post(workshop_api_url, data=params)
 
-    # Do response check
+    # TODO: Do response check
 
     sharedfile = r.json()["response"]["publishedfiledetails"][0]
 
     return sharedfile
-
-
-if __name__ == "__main__":
-    pub = get_published_file_details(3108198185)
-    print(pub)
