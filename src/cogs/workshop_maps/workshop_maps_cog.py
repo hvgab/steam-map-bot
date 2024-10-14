@@ -14,7 +14,7 @@ WORKSHOP_CONTRIBUTER_ROLE = "🪖 Workshop Contributer!"
 class WorkshopCog(discord.Cog, name="Workshop Cog"):
     def __init__(self, bot):
         self.bot = bot
-        self.CHANNEL_NAME = "workshop-maps"
+        self.CHANNEL_NAME = "🤖-workshop-maps"
         self.WORKSHOP_URLS = [
             "https://steamcommunity.com/sharedfiles/filedetails/?id=",
             "https://steamcommunity.com/workshop/filedetails/?id=",
@@ -57,7 +57,7 @@ class WorkshopCog(discord.Cog, name="Workshop Cog"):
             return
 
         # If message is in bot's channel delete if not workshop link.
-        if message.channel.name == "workshop-maps" and not self._is_workshop_url(
+        if message.channel.name == self.CHANNEL_NAME and not self._is_workshop_url(
             message
         ):
             await self._remove_workshop_channel_message(message)
@@ -148,6 +148,11 @@ class WorkshopCog(discord.Cog, name="Workshop Cog"):
                 guild.channels, name=self.CHANNEL_NAME
             )
 
+            if not workshop_map_channel:
+                print("Could not get workshop channel")
+                print("workshop_map_channel")
+                print(workshop_map_channel)
+
             async for message in workshop_map_channel.history(oldest_first=True):
                 # Skip messages by the bot.
                 if message.author == self.bot.user:
@@ -189,8 +194,26 @@ class WorkshopCog(discord.Cog, name="Workshop Cog"):
                 embed = message.embeds[0]
 
                 thread = workshop_channel.get_thread(message.id)
+
+                print("Thread:")
+                print(thread)
+
                 if not thread:
-                    thread = await message.create_thread(name=embed.title)
+                    try:
+                        thread = await message.create_thread(name=embed.title)
+                    except discord.errors.HTTPException as e:
+                        if (
+                            e.text
+                            == "A thread has already been created for this message"
+                        ):
+                            print(e.text)
+                            pass
+                        else:
+                            print("thread error")
+                            print(e)
+                            print("e.text")
+                            print(e.text)
+                            raise
 
     def _create_workshop_embed(self, workshopid):
         url = f"https://steamcommunity.com/sharedfiles/filedetails/?id={workshopid}"
@@ -231,7 +254,6 @@ class WorkshopCog(discord.Cog, name="Workshop Cog"):
 
     async def _set_channel_topic(self):
         # Get workshop-map channel in all guild
-        self.WORKSHOP_CHANNEL_NAME = "workshop-maps"
         description = ""
         description += "This channel is just for workshop links. The bot will clean up the channel for all other messages. "
         description += "Each map has it's own thread for discussions. "
@@ -241,10 +263,19 @@ class WorkshopCog(discord.Cog, name="Workshop Cog"):
 
         for guild in self.bot.guilds:
             print(f"Checking '{guild.name}' for channel topic")
-            workshop_channel = discord.utils.get(
-                guild.channels, name=self.WORKSHOP_CHANNEL_NAME
-            )
-            if workshop_channel.topic != description:
+            workshop_channel = discord.utils.get(guild.channels, name=self.CHANNEL_NAME)
+            print("workshop_channel")
+            print(workshop_channel)
+
+            if not workshop_channel:
+                print("Could not find workshop channel.")
+                # TODO: Create channel?
+                return
+
+            print("workshop_channel.topic")
+            print(workshop_channel.topic)
+
+            if workshop_channel.topic is None or workshop_channel.topic != description:
                 # Add/Edit description of channel
                 print(f"Editing '{guild.name}' '#{workshop_channel.name}' topic")
                 print()
@@ -346,7 +377,7 @@ class WorkshopCog(discord.Cog, name="Workshop Cog"):
 
     async def _remove_workshop_channel_message(self, message):
         reply = await message.reply(
-            f"{message.author.mention} Only workshop links in this channel. Deleting message in 10 sec."
+            f"{message.author.mention} Only workshop links in this channel. Deleting message in 10 sec.\nFor map discussions please use the map threads."
         )
         await message.delete(delay=10)
         await reply.delete(delay=10)

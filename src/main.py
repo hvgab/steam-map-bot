@@ -26,4 +26,4 @@ for foldername in os.listdir(COGS_FOLDER):
             print(f"{foldername}.{filename[:-3]} Loaded.")
 
 
-bot.run(os.getenv("discord_token"))
+bot.run(os.getenv("DISCORD_TOKEN"))

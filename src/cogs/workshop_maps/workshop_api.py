@@ -7,7 +7,7 @@ def get_published_file_details(id):
         "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/"
     )
     params = {
-        "access_token": os.getenv("steam_access_token"),
+        "access_token": os.getenv("STEAM_ACCESS_TOKEN"),
         "itemcount": "1",
         "publishedfileids[0]": id,
     }
