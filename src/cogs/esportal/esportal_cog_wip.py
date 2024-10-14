@@ -5,199 +5,47 @@ import json
 import re
 from discord.ext import task
 from datetime import datetime as dt
-from tabulate import tabulate 
+from tabulate import tabulate
 
 maps = [
-    {
-        "id": 1,
-        "name": "Dust2",
-        "category": 1
-    },
-    {
-        "id": 2,
-        "name": "Inferno",
-        "category": 1
-    },
-    {
-        "id": 3,
-        "name": "Nuke",
-        "category": 1
-    },
-    {
-        "id": 4,
-        "name": "Overpass",
-        "category": 1
-    },
-    {
-        "id": 5,
-        "name": "Mirage",
-        "category": 1
-    },
-    {
-        "id": 6,
-        "name": "Cache",
-        "category": 2
-    },
-    {
-        "id": 7,
-        "name": "Cobblestone",
-        "category": 2
-    },
-    {
-        "id": 8,
-        "name": "Train",
-        "category": 1
-    },
-    {
-        "id": 9,
-        "name": "Tuscan",
-        "category": 2
-    },
-    {
-        "id": 10,
-        "name": "Season",
-        "category": 2
-    },
-    {
-        "id": 11,
-        "name": "Santorini",
-        "category": 2
-    },
-    {
-        "id": 12,
-        "name": "Aztec",
-        "category": 3
-    },
-    {
-        "id": 13,
-        "name": "Dust",
-        "category": 3
-    },
-    {
-        "id": 14,
-        "name": "Fire",
-        "category": 3
-    },
-    {
-        "id": 15,
-        "name": "Mill",
-        "category": 3
-    },
-    {
-        "id": 16,
-        "name": "Prodigy",
-        "category": 3
-    },
-    {
-        "id": 17,
-        "name": "Piranesi",
-        "category": 3
-    },
-    {
-        "id": 18,
-        "name": "Vertigo",
-        "category": 1
-    },
-    {
-        "id": 19,
-        "name": "Dust2 (old)",
-        "category": 4
-    },
-    {
-        "id": 20,
-        "name": "Inferno (old)",
-        "category": 4
-    },
-    {
-        "id": 21,
-        "name": "Nuke (old)",
-        "category": 4
-    },
-    {
-        "id": 22,
-        "name": "Cobblestone (old)",
-        "category": 4
-    },
-    {
-        "id": 23,
-        "name": "Train (old)",
-        "category": 4
-    },
-    {
-        "id": 24,
-        "name": "Office",
-        "category": 5
-    },
-    {
-        "id": 25,
-        "name": "Assault (1.6)",
-        "category": 5
-    },
-    {
-        "id": 26,
-        "name": "Italy",
-        "category": 5
-    },
-    {
-        "id": 27,
-        "name": "Insertion",
-        "category": 5
-    },
-    {
-        "id": 28,
-        "name": "Agency",
-        "category": 5
-    },
-    {
-        "id": 29,
-        "name": "Militia",
-        "category": 5
-    },
-    {
-        "id": 30,
-        "name": "Estate (1.6)",
-        "category": 5
-    },
-    {
-        "id": 31,
-        "name": "Subzero",
-        "category": 2
-    },
-    {
-        "id": 32,
-        "name": "Cache (workshop)",
-        "category": 2
-    },
-    {
-        "id": 33,
-        "name": "Aim map",
-        "category": 6
-    },
-    {
-        "id": 34,
-        "name": "Ancient",
-        "category": 1
-    },
-    {
-        "id": 35,
-        "name": "Dr Pepper Wingman",
-        "category": 7
-    },
-    {
-        "id": 36,
-        "name": "Aim Esportal",
-        "category": 6
-    },
-    {
-        "id": 37,
-        "name": "Aim Monster",
-        "category": 6
-    },
-    {
-        "id": 38,
-        "name": "OMEN Astralis Wingman",
-        "category": 7
-    }
+    {"id": 1, "name": "Dust2", "category": 1},
+    {"id": 2, "name": "Inferno", "category": 1},
+    {"id": 3, "name": "Nuke", "category": 1},
+    {"id": 4, "name": "Overpass", "category": 1},
+    {"id": 5, "name": "Mirage", "category": 1},
+    {"id": 6, "name": "Cache", "category": 2},
+    {"id": 7, "name": "Cobblestone", "category": 2},
+    {"id": 8, "name": "Train", "category": 1},
+    {"id": 9, "name": "Tuscan", "category": 2},
+    {"id": 10, "name": "Season", "category": 2},
+    {"id": 11, "name": "Santorini", "category": 2},
+    {"id": 12, "name": "Aztec", "category": 3},
+    {"id": 13, "name": "Dust", "category": 3},
+    {"id": 14, "name": "Fire", "category": 3},
+    {"id": 15, "name": "Mill", "category": 3},
+    {"id": 16, "name": "Prodigy", "category": 3},
+    {"id": 17, "name": "Piranesi", "category": 3},
+    {"id": 18, "name": "Vertigo", "category": 1},
+    {"id": 19, "name": "Dust2 (old)", "category": 4},
+    {"id": 20, "name": "Inferno (old)", "category": 4},
+    {"id": 21, "name": "Nuke (old)", "category": 4},
+    {"id": 22, "name": "Cobblestone (old)", "category": 4},
+    {"id": 23, "name": "Train (old)", "category": 4},
+    {"id": 24, "name": "Office", "category": 5},
+    {"id": 25, "name": "Assault (1.6)", "category": 5},
+    {"id": 26, "name": "Italy", "category": 5},
+    {"id": 27, "name": "Insertion", "category": 5},
+    {"id": 28, "name": "Agency", "category": 5},
+    {"id": 29, "name": "Militia", "category": 5},
+    {"id": 30, "name": "Estate (1.6)", "category": 5},
+    {"id": 31, "name": "Subzero", "category": 2},
+    {"id": 32, "name": "Cache (workshop)", "category": 2},
+    {"id": 33, "name": "Aim map", "category": 6},
+    {"id": 34, "name": "Ancient", "category": 1},
+    {"id": 35, "name": "Dr Pepper Wingman", "category": 7},
+    {"id": 36, "name": "Aim Esportal", "category": 6},
+    {"id": 37, "name": "Aim Monster", "category": 6},
+    {"id": 38, "name": "OMEN Astralis Wingman", "category": 7},
 ]
 
 
@@ -206,7 +54,9 @@ class EsportalCog(discord.Cog, name="Esportal Cog"):
         self.message = None
         self.interval = None
         self.bot_message = None
-        self.regex = re.compile(r"https:\/\/esportal.com\/.*\/gather\/(\d+)")
+        self.esportal_gather_regex = re.compile(
+            r"https:\/\/esportal.com\/.*\/gather\/(\d+)"
+        )
         self.gather_id = None
         self.gather = None
         self.match = None
@@ -221,22 +71,21 @@ class EsportalCog(discord.Cog, name="Esportal Cog"):
         # Skip messages from bot.
         if message.author == self.bot.user:
             return
-        
+
         # If not gather, skip
-        gather_id_match = self.regex.search(self.message.content)
+        gather_id_match = self.esportal_gather_regex.search(self.message.content)
         if not gather_id_match:
             return
-        
+
         self.gather_id = gather_id_match.group(1)
         print("gather_id_match: " + str(gather_id_match))
         print("self.gather_id: " + str(self.gather_id))
-        
-        
+
         self.main.start()
 
     def cog_unload(self):
         self.main.cancel()
-        
+
     @task.loop(seconds=15)
     async def main(self):
         # Get gather
@@ -348,7 +197,7 @@ class EsportalCog(discord.Cog, name="Esportal Cog"):
             map_name = self.find_map(self.match.map_id)
             print(f"match map id: {self.match.map_id}")
             print(f"map: {map_name}")
-        
+
         # Summary
         summary = ""
         if self.state == "WAITING":
@@ -388,7 +237,9 @@ class EsportalCog(discord.Cog, name="Esportal Cog"):
             for index in range(5):
                 print("pt1: " + players_team1[index])
                 print("pt2: " + players_team1[index])
-                player_list.append([players_team1[index].username, players_team2[index].username])
+                player_list.append(
+                    [players_team1[index].username, players_team2[index].username]
+                )
             player_list.insert(0, ["Team 1", "Team 2"])
             print("Player list to make_table:")
             print(player_list)
@@ -401,10 +252,12 @@ class EsportalCog(discord.Cog, name="Esportal Cog"):
             color=self.bot.config.colors.esportal,
             title=title,
             url=url,
-            author=discord.Author(name=author_name, icon_url=author_icon, url=author_url),
+            author=discord.Author(
+                name=author_name, icon_url=author_icon, url=author_url
+            ),
             description=description,
             footer="Last update",
-            timestamp=discord.Timestamp.now()
+            timestamp=discord.Timestamp.now(),
         )
         print("Embed:", embed)
         return embed
@@ -420,5 +273,3 @@ class EsportalCog(discord.Cog, name="Esportal Cog"):
             if map.id == id:
                 map_name = map.name
         return map_name
-
-    
